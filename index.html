@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Dorm Alpha | Pro Admin</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root { --primary: #007aff; --success: #4cd964; --danger: #ff3b30; --bg: #f2f2f7; --card: #ffffff; --text: #333333; }
+        
+        /* THEMES */
+        body.theme-black { --primary: #ffffff; --bg: #000000; --card: #1c1c1e; --text: #ffffff; }
+        body.theme-purple { --primary: #af52de; --bg: #2b0040; --card: #3d005c; --text: #ffffff; }
+
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 30px; transition: 0.3s; overflow-x: hidden; }
+        
+        /* Header & Profile */
+        .header { background: var(--primary); color: white; padding: 45px 20px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        body.theme-black .header { color: #000; }
+        
+        .profile-btn { width: 45px; height: 45px; background: rgba(0,0,0,0.1); border-radius: 50%; border: 2px solid white; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .profile-btn img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Bluetooth Control Panel */
+        .bt-panel { background: #007aff; color: white; padding: 18px; border-radius: 15px; margin: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border: none; width: calc(100% - 30px); font-weight: bold; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .bt-panel.connected { background: var(--success); }
+        .pulse { animation: bt-pulse 2s infinite; }
+        @keyframes bt-pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 122, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0); } }
+
+        /* Sidebar & Settings */
+        .sidebar { position: fixed; top: 0; right: -100%; width: 85%; height: 100%; background: var(--card); color: var(--text); z-index: 2000; transition: 0.4s; padding: 25px; box-sizing: border-box; overflow-y: auto; }
+        .sidebar.active { right: 0; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 1500; }
+        .overlay.active { display: block; }
+        
+        .warden-photo-container { width: 90px; height: 90px; margin: 0 auto 15px; position: relative; cursor: pointer; }
+        .warden-photo-upload { width: 100%; height: 100%; background: #ddd; border-radius: 50%; border: 3px solid var(--primary); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .warden-photo-upload img { width: 100%; height: 100%; object-fit: cover; }
+        .cam-icon { position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--card); font-size: 12px; }
+
+        /* Admin Action Buttons */
+        .admin-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .action-btn { padding: 12px; border-radius: 10px; border: none; font-weight: bold; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+        .pdf-btn { background: #ff3b30; color: white; }
+        .share-btn { background: #4cd964; color: white; }
+
+        /* Student List */
+        .student-card { background: var(--card); padding: 15px; border-radius: 12px; margin: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .edit-icon { color: var(--primary); font-size: 18px; margin-left: 10px; cursor: pointer; padding: 5px; }
+
+        /* General UI */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 15px; }
+        .stat-card { background: var(--card); padding: 15px; border-radius: 15px; text-align: center; }
+        .admin-section { background: var(--card); margin: 15px; padding: 20px; border-radius: 15px; border: 1.5px dashed var(--primary); }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; background: var(--card); color: var(--text); box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body class="theme-default">
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="header">
+    <div>
+        <h2 style="margin:0; font-size: 18px;">Dorm Alpha Pro</h2>
+        <div id="bt-status" style="font-size: 10px; opacity: 0.8;">Machine: Disconnected</div>
+    </div>
+    <div class="profile-btn" id="header-profile-pic" onclick="toggleSidebar()">👤</div>
+</div>
+
+<button class="bt-panel pulse" id="bt-btn" onclick="connectBluetooth()">
+    <span id="bt-text">🔵 Pair Bluetooth Machine</span>
+    <span style="font-size: 20px;">ᛒ</span>
+</button>
+
+<div class="sidebar" id="sidebar">
+    <div class="warden-photo-container" onclick="document.getElementById('photo-input').click()">
+        <div class="warden-photo-upload">
+            <img id="warden-img-preview" src="" style="display:none;">
+            <span id="p-label" style="font-size: 10px; color:#888;">PHOTO</span>
+        </div>
+        <div class="cam-icon">📷</div>
+    </div>
+    <input type="file" id="photo-input" style="display:none;" accept="image/*" onchange="handlePhoto(this)">
+
+    <input type="text" id="warden-name" placeholder="Warden Name" oninput="saveConfig()">
+
+    <div class="admin-actions">
+        <button class="action-btn pdf-btn" onclick="generatePDF()">
+            <span>📄</span> PDF Report
+        </button>
+        <button class="action-btn share-btn" onclick="shareToAdmin()">
+            <span>🔗</span> Share Info
+        </button>
+    </div>
+    
+    <p style="font-size: 12px; margin-top: 10px;">App Theme:</p>
+    <div style="display:flex; gap:10px; margin-bottom:25px;">
+        <div onclick="setTheme('default')" style="width:35px; height:35px; background:#007aff; border-radius:8px;"></div>
+        <div onclick="setTheme('black')" style="width:35px; height:35px; background:#000; border-radius:8px; border:1px solid #444;"></div>
+        <div onclick="setTheme('purple')" style="width:35px; height:35px; background:#af52de; border-radius:8px;"></div>
+    </div>
+
+    <button class="btn" style="background:#8e8e93;" onclick="toggleSidebar()">Close Menu</button>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card"><h3 id="p-count" style="color:var(--success)">0</h3><p style="font-size:10px;">IN</p></div>
+    <div class="stat-card"><h3 id="t-count" style="color:#f1c40f">0</h3><p style="font-size:10px;">TOTAL</p></div>
+    <div class="stat-card"><h3 id="a-count" style="color:var(--danger)">0</h3><p style="font-size:10px;">OUT</p></div>
+</div>
+
+<div class="admin-section">
+    <input type="text" id="reg-name" placeholder="Student Name">
+    <input type="text" id="reg-id" placeholder="Tag Serial Number">
+    <button class="btn" onclick="addStudent()">Register Student</button>
+</div>
+
+<div style="padding: 0 15px;"><input type="text" id="search" placeholder="🔍 Search name or tag..." onkeyup="render()"></div>
+<div id="student-list"></div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('alphaDB_v8')) || [];
+    let config = JSON.parse(localStorage.getItem('alphaConfig_v8')) || {name:'', photo:'', theme:'default', deviceName: null};
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    // 1. PDF REPORTING
+    function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const warden = config.name || "Head Warden";
+        doc.setFontSize(18); doc.text("DORM ALPHA: ATTENDANCE REPORT", 14, 20);
+        doc.setFontSize(10); doc.text(`Warden: ${warden} | Date: ${new Date().toLocaleString()}`, 14, 30);
+        const rows = db.map(s => [s.name, s.id, s.status, s.log]);
+        doc.autoTable({ head: [['Name', 'Tag ID', 'Status', 'Last Scan']], body: rows, startY: 40, theme: 'grid' });
+        doc.save(`Dorm_Report_${Date.now()}.pdf`);
+    }
+
+    // 2. SOCIAL SHARING
+    async function shareToAdmin() {
+        const total = db.length; const inside = db.filter(s => s.status === 'PRESENT').length;
+        const text = `Dorm Alpha Report\nWarden: ${config.name}\nTotal: ${total}\nIn: ${inside}\nOut: ${total - inside}`;
+        if (navigator.share) {
+            try { await navigator.share({ title: 'Dorm Report', text: text, url: window.location.href }); } catch (err) {}
+        } else { alert("Share not supported on this browser."); }
+    }
+
+    // 3. BLUETOOTH PAIRING
+    async function connectBluetooth() {
+        const btn = document.getElementById('bt-btn');
+        try {
+            const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+            await device.gatt.connect();
+            config.deviceName = device.name; saveConfig(); updateUI();
+        } catch (err) { alert("Pairing failed. Ensure Bluetooth is on."); }
+    }
+
+    function handlePhoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => { config.photo = e.target.result; saveConfig(); updateUI(); };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function setTheme(t) { config.theme = t; saveConfig(); updateUI(); }
+
+    function updateUI() {
+        document.body.className = 'theme-' + config.theme;
+        if(config.photo) {
+            document.getElementById('warden-img-preview').src = config.photo;
+            document.getElementById('warden-img-preview').style.display = 'block';
+            document.getElementById('p-label').style.display = 'none';
+            document.getElementById('header-profile-pic').innerHTML = `<img src="${config.photo}">`;
+        }
+        if(config.deviceName) {
+            document.getElementById('bt-status').innerText = "Machine: " + config.deviceName;
+            document.getElementById('bt-btn').className = "bt-panel connected";
+            document.getElementById('bt-text').innerText = "✅ Machine Paired";
+        }
+        render();
+    }
+
+    function addStudent() {
+        let n = document.getElementById('reg-name'), i = document.getElementById('reg-id');
+        if(!n.value || !i.value) return;
+        db.push({ name: n.value, id: i.value, status: 'ABSENT', log: 'No Scan', added: Date.now() });
+        n.value = ''; i.value = ''; saveDB();
+    }
+
+    function editStudent(id) {
+        let idx = db.findIndex(s => s.id === id);
+        let n = prompt("Edit name:", db[idx].name);
+        if(n) { db[idx].name = n; saveDB(); }
+    }
+
+    function toggleStatus(id) {
+        let idx = db.findIndex(s => s.id === id);
+        db[idx].status = db[idx].status === 'ABSENT' ? 'PRESENT' : 'ABSENT';
+        db[idx].log = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        saveDB();
+    }
+
+    function saveDB() { localStorage.setItem('alphaDB_v8', JSON.stringify(db)); render(); }
+    function saveConfig() { config.name = document.getElementById('warden-name').value; localStorage.setItem('alphaConfig_v8', JSON.stringify(config)); }
+
+    function render() {
+        let list = document.getElementById('student-list'), p = 0, q = document.getElementById('search').value.toLowerCase();
+        list.innerHTML = '';
+        db.sort((a,b) => a.added - b.added).forEach(s => {
+            if(s.status === 'PRESENT') p++;
+            if(s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)) {
+                list.innerHTML += `
+                <div class="student-card" style="border-left-color:${s.status==='PRESENT'?'var(--success)':'var(--danger)'}">
+                    <div onclick="toggleStatus('${s.id}')" style="flex:1">
+                        <div style="display:flex; align-items:center;"><b>${s.name}</b> <span class="edit-icon" onclick="event.stopPropagation(); editStudent('${s.id}')">✏️</span></div>
+                        <span style="font-size:11px; opacity:0.6">Tag: ${s.id}</span>
+                    </div>
+                    <div style="text-align:right"><b style="color:${s.status==='PRESENT'?'var(--success)':'var(--danger)'}">${s.status}</b><br><small>${s.log}</small></div>
+                </div>`;
+            }
+        });
+        document.getElementById('p-count').innerText = p;
+        document.getElementById('a-count').innerText = db.length - p;
+        document.getElementById('t-count').innerText = db.length;
+    }
+
+    document.getElementById('warden-name').value = config.name;
+    updateUI();
+</script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
